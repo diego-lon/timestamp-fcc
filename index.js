@@ -23,14 +23,33 @@ app.get("/api/hello", function (req, res) {
   res.json({ greeting: "hello API" });
 });
 
+function isUnixTimestamp(str) {
+  if (str) {
+    const timestampRegex = /^\d{10,13}$/;
+    return timestampRegex.test(str);
+  } else {
+    return false;
+  }
+}
+
+app.get("/api", function (req, res) {
+  res.json({ unix: new Date().getTime(), utc: new Date().toUTCString() });
+});
+
 app.get("/api/:date", function (req, res) {
   const date = req.params.date;
   try {
+    const isUnix = isUnixTimestamp(date);
+    if (!date || (!isUnix && isNaN(new Date(date)))) {
+      res.json({ error: "Invalid Date" });
+    }
+    const unix = isUnix ? parseInt(date) : new Date(date).getTime();
+    const utc = isUnix
+      ? new Date(parseInt(date)).toUTCString()
+      : new Date(date).toUTCString();
     res.json({
-      unix: date ? new Date(req.params.date).getTime() : Date.now().getTime(),
-      utc: date
-        ? new Date(req.params.date).getUTCDate()
-        : Date.now().getUTCDate,
+      unix: date ? unix : new Date(),
+      utc: date ? utc : Date.now(),
     });
   } catch {
     res.json({ error: "Invalid Date" });
